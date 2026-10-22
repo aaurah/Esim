@@ -1,0 +1,1 @@
+- [eSIM privacy positioning](esim-privacy-positioning.md) — privacy-aware, never promise anonymity; use authorized providers and support required verification.

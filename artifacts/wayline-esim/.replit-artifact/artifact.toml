@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Wayline eSIM"
+description = "A privacy-conscious global eSIM storefront and operations console for browsing travel data plans, managing orders, and preparing authorized telecom and payment integrations. Demo catalog data is clearly labeled and live provisioning is disabled until a supplier is configured."
+version = "1.0.0"
+id = "artifacts/wayline-esim"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23777
+
+[services.development]
+run = "pnpm --filter @workspace/wayline-esim run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/wayline-esim", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/wayline-esim/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23777"
+BASE_PATH = "/"

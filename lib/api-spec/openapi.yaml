@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Wayline eSIM catalog and operations API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: catalog
+    description: Sandbox travel eSIM catalog and coverage
+  - name: admin
+    description: Authenticated admin operations and sandbox records
 paths:
   /healthz:
     get:
@@ -24,6 +28,280 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /catalog/plans:
+    get:
+      operationId: getPlans
+      tags: [catalog]
+      summary: List available demo data plans
+      description: Returns clearly labeled sandbox catalog plans. This endpoint does not represent live supplier inventory.
+      responses:
+        "200":
+          description: Sandbox data plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DataPlan"
+  /catalog/coverage:
+    get:
+      operationId: getCoverage
+      tags: [catalog]
+      summary: List demo coverage regions
+      description: Returns sandbox coverage examples, not verified carrier availability.
+      responses:
+        "200":
+          description: Sandbox coverage regions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CoverageRegion"
+  /admin/overview:
+    get:
+      operationId: getAdminOverview
+      tags: [admin]
+      summary: Get operations overview
+      description: Returns sandbox readiness counts and capability gates for an authenticated administrator.
+      responses:
+        "200":
+          description: Operations overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOverview"
+  /admin/integrations:
+    get:
+      operationId: getAdminIntegrations
+      tags: [admin]
+      summary: Get integration readiness
+      description: Reports provider readiness for an authenticated administrator. No credentials are returned.
+      responses:
+        "200":
+          description: Integration readiness
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IntegrationStatus"
+  /admin/modules:
+    get:
+      operationId: getAdminModules
+      tags: [admin]
+      summary: List admin modules
+      description: Returns the module registry, safe editable fields, and live-action gates.
+      responses:
+        "200":
+          description: Admin module registry
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminModule"
+  /admin/records:
+    get:
+      operationId: getAdminRecords
+      tags: [admin]
+      summary: List records for an admin module
+      parameters:
+        - name: module
+          in: query
+          required: true
+          schema: { type: string }
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Records in the selected module
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminRecord"
+        "400": { description: Invalid module or search query }
+        "401": { description: Sign-in required }
+        "403": { description: Admin access required }
+    post:
+      operationId: createAdminRecord
+      tags: [admin]
+      summary: Create a sandbox admin record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRecordInput"
+      responses:
+        "201":
+          description: Record created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminRecord"
+        "400": { description: Invalid module or record fields }
+        "401": { description: Sign-in required }
+        "403": { description: Admin access required }
+  /admin/records/{id}:
+    patch:
+      operationId: updateAdminRecord
+      tags: [admin]
+      summary: Update an admin record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRecordUpdate"
+      responses:
+        "200":
+          description: Record updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminRecord"
+        "400": { description: Invalid record fields }
+        "401": { description: Sign-in required }
+        "403": { description: Admin access required }
+        "404": { description: Record not found }
+    delete:
+      operationId: deleteAdminRecord
+      tags: [admin]
+      summary: Delete an admin record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Record deleted }
+        "401": { description: Sign-in required }
+        "403": { description: Admin access required }
+        "404": { description: Record not found }
+  /admin/actions:
+    post:
+      operationId: runAdminSandboxAction
+      tags: [admin]
+      summary: Run a sandbox-only operational action
+      description: Records a dry-run result and audit entry. It never calls a telecom supplier, payment network, or customer endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminActionInput"
+      responses:
+        "200":
+          description: Sandbox action result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminActionResult"
+        "400": { description: Invalid or unsupported action }
+        "401": { description: Sign-in required }
+        "403": { description: Admin access required }
+  /admin/audit-logs:
+    get:
+      operationId: getAdminAuditLogs
+      tags: [admin]
+      summary: List administrative audit events
+      responses:
+        "200":
+          description: Recent audit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminAuditLog"
+        "401": { description: Sign-in required }
+        "403": { description: Admin access required }
+  /admin/staff:
+    get:
+      operationId: getAdminStaff
+      tags: [admin]
+      summary: List staff roles
+      responses:
+        "200":
+          description: Staff roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffRole"
+        "401": { description: Sign-in required }
+        "403": { description: Owner access required }
+    post:
+      operationId: createAdminStaff
+      tags: [admin]
+      summary: Assign a role to an existing authenticated staff member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffRoleInput"
+      responses:
+        "201":
+          description: Role assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffRole"
+        "400": { description: Invalid role assignment }
+        "401": { description: Sign-in required }
+        "403": { description: Owner access required }
+  /admin/staff/{userId}:
+    patch:
+      operationId: updateAdminStaff
+      tags: [admin]
+      summary: Update a staff role
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffRoleUpdate"
+      responses:
+        "200":
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffRole"
+        "401": { description: Sign-in required }
+        "403": { description: Owner access required }
+        "404": { description: Staff member not found }
+    delete:
+      operationId: deleteAdminStaff
+      tags: [admin]
+      summary: Revoke a staff role
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Role revoked }
+        "401": { description: Sign-in required }
+        "403": { description: Owner access required }
+        "404": { description: Staff member not found }
 components:
   schemas:
     HealthStatus:
@@ -33,4 +311,166 @@ components:
           type: string
       required:
         - status
+    DataPlan:
+      type: object
+      required: [id, name, destination, countryCode, region, dataGb, validityDays, priceUsd, planType, networks, featured, status, demoOnly]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        destination: { type: string }
+        countryCode: { type: string }
+        region: { type: string }
+        dataGb: { type: number }
+        validityDays: { type: integer }
+        priceUsd: { type: number }
+        planType: { type: string, enum: [data-only, data-voice-sms] }
+        networks:
+          type: array
+          items: { type: string }
+        featured: { type: boolean }
+        status: { type: string, enum: [available, draft, paused] }
+        demoOnly: { type: boolean, const: true }
+    CoverageRegion:
+      type: object
+      required: [id, name, countryCount, countries, status, demoOnly]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        countryCount: { type: integer }
+        countries:
+          type: array
+          items: { type: string }
+        status: { type: string, enum: [available, draft, paused] }
+        demoOnly: { type: boolean, const: true }
+    AdminOverview:
+      type: object
+      required: [mode, planCount, coverageRegionCount, recordCount, auditEventCount, liveProvisioningEnabled, livePaymentsEnabled]
+      properties:
+        mode: { type: string, enum: [sandbox] }
+        planCount: { type: integer }
+        coverageRegionCount: { type: integer }
+        recordCount: { type: integer }
+        auditEventCount: { type: integer }
+        liveProvisioningEnabled: { type: boolean, const: false }
+        livePaymentsEnabled: { type: boolean, const: false }
+    IntegrationStatus:
+      type: object
+      required: [id, category, name, status, note]
+      properties:
+        id: { type: string }
+        category: { type: string, enum: [telecom, payments] }
+        name: { type: string }
+        status: { type: string, enum: [not-configured, sandbox-ready, live-ready] }
+        note: { type: string }
+    AdminField:
+      type: object
+      required: [key, label, type, required]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        type: { type: string, enum: [text, textarea, number, boolean, select] }
+        required: { type: boolean }
+        options:
+          type: array
+          items: { type: string }
+        helpText: { type: string }
+    AdminModule:
+      type: object
+      required: [id, label, description, category, mode, fields, actions]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        description: { type: string }
+        category: { type: string, enum: [operations, catalog, telecom, payments, customers, support, security, system] }
+        mode: { type: string, enum: [editable, gated, readonly] }
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminField"
+        actions:
+          type: array
+          items: { type: string }
+    AdminRecord:
+      type: object
+      required: [id, module, name, status, data, demoOnly, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        module: { type: string }
+        name: { type: string }
+        status: { type: string }
+        data: { type: object, additionalProperties: true }
+        demoOnly: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AdminRecordInput:
+      type: object
+      required: [module, name, status, data]
+      properties:
+        module: { type: string }
+        name: { type: string, minLength: 1, maxLength: 160 }
+        status: { type: string, minLength: 1, maxLength: 60 }
+        data: { type: object, additionalProperties: true }
+    AdminRecordUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+        status: { type: string, minLength: 1, maxLength: 60 }
+        data: { type: object, additionalProperties: true }
+    AdminActionInput:
+      type: object
+      required: [module, recordId, action]
+      properties:
+        module: { type: string }
+        recordId: { type: string }
+        action:
+          type: string
+          enum: [dry-run-provision, dry-run-recharge, test-provider-sandbox, test-webhook-sandbox, retry-job-sandbox, simulate-refund]
+        idempotencyKey: { type: string, maxLength: 128 }
+    AdminActionResult:
+      type: object
+      required: [id, module, recordId, action, status, detail, liveExecuted, createdAt]
+      properties:
+        id: { type: string }
+        module: { type: string }
+        recordId: { type: string }
+        action: { type: string }
+        status: { type: string, enum: [simulated, blocked] }
+        detail: { type: string }
+        liveExecuted: { type: boolean, const: false }
+        createdAt: { type: string, format: date-time }
+    AdminAuditLog:
+      type: object
+      required: [id, actorUserId, action, module, recordId, summary, createdAt]
+      properties:
+        id: { type: string }
+        actorUserId: { type: string }
+        action: { type: string }
+        module: { type: string }
+        recordId: { type: string }
+        summary: { type: string }
+        createdAt: { type: string, format: date-time }
+    StaffRole:
+      type: object
+      required: [userId, email, role, permissions, enabled, createdAt]
+      properties:
+        userId: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [owner, admin, operator, support, read-only] }
+        permissions:
+          type: array
+          items: { type: string }
+        enabled: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    StaffRoleInput:
+      type: object
+      required: [email, role]
+      properties:
+        email: { type: string, format: email }
+        role: { type: string, enum: [admin, operator, support, read-only] }
+    StaffRoleUpdate:
+      type: object
+      required: [role, enabled]
+      properties:
+        role: { type: string, enum: [admin, operator, support, read-only] }
+        enabled: { type: boolean }
 
